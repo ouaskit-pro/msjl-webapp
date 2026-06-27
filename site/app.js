@@ -222,18 +222,34 @@ function styleFeature(feature) {
 function pointToLayer(feature, latlng) {
   const dataset = feature.properties?._dataset;
   
-  // Si c'est un point OSM et qu'on a une icône, on affiche l'Emoji
-  if (dataset === "osm_indices" && feature.properties.osm_icon) {
+  if (dataset === "osm_indices" && feature.properties.osm_iconPath) {
+    // Base URL vers les raw files d'OpenStreetMap Carto
+    const baseUrl = "https://raw.githubusercontent.com/openstreetmap-carto/openstreetmap-carto/master/symbols/";
+    const iconUrl = `${baseUrl}${feature.properties.osm_iconPath}`;
+    
     const icon = L.divIcon({
-      html: `<div style="font-size: 18px; line-height: 1; text-align: center; text-shadow: 1px 1px 1px rgba(255,255,255,0.8);">${feature.properties.osm_icon}</div>`,
-      className: 'custom-osm-icon',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
+      // Création d'un petit macaron avec l'icône au centre
+      html: `<div style="
+        background-color: #277da1; 
+        border: 2px solid white; 
+        border-radius: 50%; 
+        width: 24px; 
+        height: 24px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      ">
+        <img src="${iconUrl}" style="width: 14px; height: 14px; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+      </div>`,
+      className: 'custom-osm-carto-icon',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
     });
     return L.marker(latlng, { icon });
   }
 
-  // Sinon, comportement par défaut (cercles)
+  // Fallback: s'il n'y a pas d'icône spécifique ou si c'est un autre dataset (comme MJSL)
   const radius = dataset === "osm_indices" ? 6 : 8;
   return L.circleMarker(latlng, {
     radius,
@@ -534,7 +550,7 @@ function osmToGeojson(osmJson) {
         osm_id: `${element.type}/${element.id}`,
         osm_label: tags.name || kind.label,
         osm_kind: kind.key,
-        osm_icon: kind.icon,
+        osm_iconPath: kind.iconPath, // On stocke le chemin de l'icône SVG
         mjsl_hint: kind.hint,
         _dataset: "osm_indices",
         _dataset_label: "Indices OSM",
@@ -569,48 +585,45 @@ function osmElementGeometry(element) {
 function osmKind(tags) {
   // Transports publics (bus, tram, arrêts)
   if (tags.highway === "bus_stop" || ["platform", "stop_position"].includes(tags.public_transport)) {
-    return { key: "transport", label: "Transport public OSM", dimensions: ["D6"], hint: "Indice de chaîne métropolitaine.", icon: "🚌" };
+    return { key: "transport", label: "Transport public OSM", dimensions: ["D6"], hint: "Indice de chaîne métropolitaine.", iconPath: "transport/bus_stop.svg" };
   }
 
   // Cheminements et voirie (highway)
   if (tags.highway === "steps") {
-    return { key: "steps", label: "Escalier OSM", dimensions: ["D1"], hint: "Indice de rupture physique à vérifier.", icon: "🪜" };
+    return { key: "steps", label: "Escalier OSM", dimensions: ["D1"], hint: "Indice de rupture physique à vérifier.", iconPath: "highway/steps.svg" }; 
   }
   if (tags.highway === "crossing") {
-    return { key: "crossing", label: "Traversée OSM", dimensions: ["D1", "D3"], hint: "Point de continuité ou de conflit à vérifier.", icon: "🦓" };
+    // Les passages piétons n'ont pas toujours d'icône point par défaut dans carto, on peut utiliser un point générique ou une icône de transport.
+    return { key: "crossing", label: "Traversée OSM", dimensions: ["D1", "D3"], hint: "Point de continuité ou de conflit à vérifier.", iconPath: "transport/crossing.svg" };
   }
   if (["footway", "path", "pedestrian"].includes(tags.highway)) {
-    return { key: "pedestrian", label: "Cheminement piéton OSM", dimensions: ["D1", "D2", "D4"], hint: "Espace piétonnier potentiellement agréable.", icon: "🚶" };
+    return { key: "pedestrian", label: "Cheminement piéton OSM", dimensions: ["D1", "D2", "D4"], hint: "Espace piétonnier potentiellement agréable.", iconPath: null };
   }
 
   // Équipements et confort (amenity)
   if (tags.amenity === "bench") {
-    return { key: "bench", label: "Banc OSM", dimensions: ["D1", "D4"], hint: "Ressource de repos à vérifier.", icon: "🪑" };
+    return { key: "bench", label: "Banc OSM", dimensions: ["D1", "D4"], hint: "Ressource de repos à vérifier.", iconPath: "amenity/bench.svg" };
   }
   if (tags.amenity === "toilets") {
-    return { key: "toilets", label: "Toilettes OSM", dimensions: ["D4"], hint: "Ressource de soin et d'hygiène.", icon: "🚻" };
+    return { key: "toilets", label: "Toilettes OSM", dimensions: ["D4"], hint: "Ressource de soin et d'hygiène.", iconPath: "amenity/toilets.svg" };
   }
   if (tags.amenity === "drinking_water") {
-    return { key: "drinking_water", label: "Point d'eau OSM", dimensions: ["D4"], hint: "Ressource gratuite de confort.", icon: "🚰" };
+    return { key: "drinking_water", label: "Point d'eau OSM", dimensions: ["D4"], hint: "Ressource gratuite de confort.", iconPath: "amenity/drinking_water.svg" };
   }
   if (["restaurant", "cafe", "bar", "fast_food"].includes(tags.amenity)) {
-    let icon = "🍽️";
-    if (tags.amenity === "cafe") icon = "☕";
-    else if (tags.amenity === "bar") icon = "🍻";
-    else if (tags.amenity === "fast_food") icon = "🍔";
-    return { key: "commercial", label: "Activité commerciale OSM", dimensions: ["D4", "D5"], hint: "Indice de confort potentiellement conditionné à la consommation.", icon: icon };
+    return { key: "commercial", label: "Activité commerciale OSM", dimensions: ["D4", "D5"], hint: "Indice de confort potentiellement conditionné à la consommation.", iconPath: `amenity/${tags.amenity}.svg` };
   }
 
   // Tourisme et Informations (tourism)
   if (tags.tourism === "viewpoint") {
-    return { key: "viewpoint", label: "Belvédère OSM", dimensions: ["D1", "D2", "D4"], hint: "Expérience paysagère et belvédère.", icon: "🔭" };
+    return { key: "viewpoint", label: "Belvédère OSM", dimensions: ["D1", "D2", "D4"], hint: "Expérience paysagère et belvédère.", iconPath: "tourism/viewpoint.svg" };
   }
   if (tags.tourism === "information") {
-    return { key: "information", label: "Information OSM", dimensions: ["D3"], hint: "Point d'information cognitif.", icon: "ℹ️" };
+    return { key: "information", label: "Information OSM", dimensions: ["D3"], hint: "Point d'information cognitif.", iconPath: "tourism/information.svg" };
   }
 
   // Sécurité (Fallback si de futurs filtres sont ajoutés)
-  return { key: "other", label: "Objet OSM", dimensions: ["D1"], hint: "Indice OSM à confirmer sur terrain.", icon: "📍" };
+  return { key: "other", label: "Objet OSM", dimensions: ["D1"], hint: "Indice OSM à confirmer sur terrain.", iconPath: null };
 }
 
 async function handleFileImport(event) {
