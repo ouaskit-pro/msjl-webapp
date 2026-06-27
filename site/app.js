@@ -222,15 +222,15 @@ function styleFeature(feature) {
 function pointToLayer(feature, latlng) {
   const dataset = feature.properties?._dataset;
   
-  // 1. Tenter d'afficher l'icône SVG Carto si elle existe
+  // 1. Afficher l'icône SVG Carto
   if (dataset === "osm_indices" && feature.properties.osm_iconPath) {
     const baseUrl = "https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/symbols/";
     const iconUrl = `${baseUrl}${feature.properties.osm_iconPath}`;
     
     const icon = L.divIcon({
       html: `<div style="
-        background-color: #277da1; 
-        border: 2px solid white; 
+        background-color: white; 
+        border: 2px solid #277da1; 
         border-radius: 50%; 
         width: 24px; 
         height: 24px; 
@@ -239,7 +239,7 @@ function pointToLayer(feature, latlng) {
         justify-content: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.4);
       ">
-        <img src="${iconUrl}" style="width: 14px; height: 14px; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+        <img src="${iconUrl}" style="width: 14px; height: 14px;" onerror="this.style.display='none'">
       </div>`,
       className: 'custom-osm-carto-icon',
       iconSize: [28, 28],
@@ -248,7 +248,7 @@ function pointToLayer(feature, latlng) {
     return L.marker(latlng, { icon });
   }
 
-  // 2. Fallback final (pour les éléments linéaires sans icône OSM comme les escaliers, ou les objets MJSL)
+  // 2. Fallback pour vos objets MJSL
   const radius = dataset === "osm_indices" ? 6 : 8;
   return L.circleMarker(latlng, {
     radius,
