@@ -585,10 +585,10 @@ function osmElementGeometry(element) {
 function osmKind(tags) {
   // Transports publics (bus, tram, arrêts)
   if (tags.highway === "bus_stop" || ["platform", "stop_position"].includes(tags.public_transport)) {
-    return { key: "transport", label: "Transport public OSM", dimensions: ["D6"], hint: "Indice de chaîne métropolitaine.", iconPath: "amenity/bus_station.svg" };
+    return { key: "transport", label: "Transport public OSM", dimensions: ["D6"], hint: "Indice de chaîne métropolitaine.", iconPath: "highway/bus_stop.svg" };
   }
 
-  // Cheminements et voirie (highway) - Remplacement des null par des icônes de substitution logiques
+  // Cheminements et voirie (highway)
   if (tags.highway === "steps") {
     return { key: "steps", label: "Escalier OSM", dimensions: ["D1"], hint: "Indice de rupture physique à vérifier.", iconPath: "highway/elevator.svg" }; 
   }
@@ -618,11 +618,12 @@ function osmKind(tags) {
     return { key: "viewpoint", label: "Belvédère OSM", dimensions: ["D1", "D2", "D4"], hint: "Expérience paysagère et belvédère.", iconPath: "tourism/viewpoint.svg" };
   }
   if (tags.tourism === "information") {
-    return { key: "information", label: "Information OSM", dimensions: ["D3"], hint: "Point d'information cognitif.", iconPath: "tourism/information.svg" };
+    // Correction du 404 : utilisation de board.svg
+    return { key: "information", label: "Information OSM", dimensions: ["D3"], hint: "Point d'information cognitif.", iconPath: "tourism/guidepost.svg" };
   }
 
-  // Fallback si de futurs filtres sont ajoutés
-  return { key: "other", label: "Objet OSM", dimensions: ["D1"], hint: "Indice OSM à confirmer sur terrain.", iconPath: "tourism/information.svg" };
+  // Fallback global
+  return { key: "other", label: "Objet OSM", dimensions: ["D1"], hint: "Indice OSM à confirmer sur terrain.", iconPath: "tourism/terminal.svg" };
 }
 
 
