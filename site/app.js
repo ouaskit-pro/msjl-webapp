@@ -756,6 +756,7 @@ function init() {
   renderClassFilters();
   initEvents();
   loadMjslData();
+  loadOsmData();
 }
 
 init();
